@@ -1,0 +1,7 @@
+//arch = zynq; split = false; format = BIN
+the_ROM_image:
+{
+	[bootloader]C:\Users\Quoke\CIS_IF\vitis_workspace\cis_platform_w_qspi\export\cis_platform_w_qspi\sw\boot\fsbl.elf
+	C:\Users\Quoke\CIS_IF\vitis_workspace\cis_application\_ide\bitstream\cis_if_module_wrapper.bit
+	C:\Users\Quoke\CIS_IF\vitis_workspace\cis_application\build\cis_application.elf
+}

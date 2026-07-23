@@ -1,0 +1,43 @@
+# --- Vivado project generated/output directories ---
+.Xil/
+**/.Xil/
+*.cache/
+*.gen/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+*.srcs/**/incremental_db/
+.Rpt
+*.jou
+*.log
+*.str
+webtalk*
+usage_statistics_webtalk.html
+nlviewcommon.logfile
+
+# Vivado exported hardware / bitstream / boot image (regenerate via Vivado "Export Hardware" / bootgen)
+*.xsa
+*.bit
+BOOT.bin
+
+# --- Vitis workspace generated content ---
+vitis_workspace/**/build/
+vitis_workspace/**/export/
+vitis_workspace/**/logs/
+vitis_workspace/**/_ide/
+vitis_workspace/**/.cache/
+vitis_workspace/**/.clangd
+vitis_workspace/**/.compile_commands
+vitis_workspace/**/compile_commands.json
+vitis_workspace/**/.metadata/
+
+# cis_platform_w_qspi: keep only vitis-comp.json (regenerated from the XSA + this descriptor)
+vitis_workspace/cis_platform_w_qspi/hw/
+vitis_workspace/cis_platform_w_qspi/resources/
+vitis_workspace/cis_platform_w_qspi/ps7_cortexa9_0/
+vitis_workspace/cis_platform_w_qspi/zynq_fsbl/zynq_fsbl_bsp/
+
+# Unused Vitis platforms not part of the active (QSPI) build
+vitis_workspace/cis_baremetal_platform/
+vitis_workspace/cis_if_platform/
