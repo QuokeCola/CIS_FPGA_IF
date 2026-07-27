@@ -8,7 +8,17 @@
 
 #include "lwip/init.h"
 #include "lwip/tcp.h"
+#include "lwip/timeouts.h"
 #include "netif/xadapter.h"
+#include "xiltimer.h"
+
+/* Required by lwIP now that NO_SYS_NO_TIMERS is disabled (see lwipopts.h) */
+u32_t sys_now(void)
+{
+    XTime now;
+    XTime_GetTime(&now);
+    return (u32_t)((now * 1000ULL) / COUNTS_PER_SECOND);
+}
 
 /* ---------------- capture geometry ---------------- */
 #define TOTAL_SAMP      408000
@@ -50,6 +60,8 @@ static int hw_init(void)
 
 static int do_capture(void)
 {
+    u32 t0 = sys_now();
+
     Xil_DCacheInvalidateRange((UINTPTR)capture_buf, CAPTURE_BYTES);
 
     if (XAxiDma_SimpleTransfer(&Dma, (UINTPTR)capture_buf,
@@ -77,33 +89,36 @@ static int do_capture(void)
     XGpio_DiscreteWrite(&Gpio, GPIO_CH_CTRL, 0x0);
 
     Xil_DCacheInvalidateRange((UINTPTR)capture_buf, CAPTURE_BYTES);
+
+    xil_printf("capture: %u ms\r\n", (unsigned)(sys_now() - t0));
     return XST_SUCCESS;
 }
 
 /* ---------------- TCP server ---------------- */
 static u32 send_offset;
 static int sending;
+static u32 send_t0;
 
 static void try_send(struct tcp_pcb *tpcb)
 {
     while (sending && send_offset < CAPTURE_BYTES) {
         u32 remaining = CAPTURE_BYTES - send_offset;
         u16 space = tcp_sndbuf(tpcb);
-        if (space == 0) return;
+        if (space == 0) break;
 
         u32 chunk = (remaining < space) ? remaining : space;
-        if (chunk > 1400) chunk = 1400;
 
         err_t e = tcp_write(tpcb, capture_buf + send_offset, (u16)chunk,
                             TCP_WRITE_FLAG_COPY);
-        if (e != ERR_OK) return;
+        if (e != ERR_OK) break;
         send_offset += chunk;
     }
     tcp_output(tpcb);
 
     if (send_offset >= CAPTURE_BYTES && sending) {
         sending = 0;
-        xil_printf("sent %u bytes\r\n", (unsigned)CAPTURE_BYTES);
+        xil_printf("sent %u bytes in %u ms\r\n",
+                   (unsigned)CAPTURE_BYTES, (unsigned)(sys_now() - send_t0));
     }
 }
 
@@ -130,6 +145,7 @@ static err_t on_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
         if (do_capture() == XST_SUCCESS) {
             send_offset = 0;
             sending = 1;
+            send_t0 = sys_now();
             try_send(tpcb);
         } else {
             tcp_write(tpcb, "ERR\n", 4, TCP_WRITE_FLAG_COPY);
@@ -192,6 +208,7 @@ int main(void)
 
     while (1) {
         xemacif_input(netif);
+        sys_check_timeouts();
     }
     return 0;
 }
